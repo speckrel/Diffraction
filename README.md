@@ -1,2 +1,2 @@
 # Diffraction
-Simulating Fraunhofer Diffraction
+A web app for simulating Fraunhofer Diffraction.
