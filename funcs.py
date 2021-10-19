@@ -1,6 +1,7 @@
 import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from PIL import Image as im
 
 def fftshift(x, axes=None):
     """
@@ -48,7 +49,7 @@ x1  = -1000
 x2  = 1000
 lam = 0.532 #Wavelength in microns
 z0  = 150 #Distance from screen in cm
-bw  = 100 #Beam width in microns
+bw  = 150 #Beam width in microns
 
 xarr = np.linspace(x1,x2,N+1)[:N]
 yarr = np.copy(xarr)
@@ -139,15 +140,48 @@ def mask(type,p1,p2):
             ap_mask[:,xcurr:xcurr + n] = np.ones((N,n))
             xcurr = xcurr + sep+n
     elif type == 'hex':
-        fh = open('hex.txt')
+        fh = open('assets/hex.txt')
         i=0
         for line in fh.readlines():
             ap_mask[i,:] = np.array(list(map(int,list(line.strip()))))
             i = i+1
+    elif type == '2dg2':
+        smin = 4
+        smax = 48
+        sstep = 4
+        xcurr = 15
+        ycurr = 15
+        n = int(p1 * N / (x2 - x1))
+        sep = 10
+        while ycurr < 490:
+            xcurr = 15
+            while xcurr < 490:
+                ap_mask[xcurr:xcurr + n, ycurr:ycurr+n] = np.ones((n, n))
+                xcurr = xcurr + sep + n
+            ycurr = ycurr + sep + n
+    elif type == 'lg':
+        smin = 0
+        smax = 90
+        sstep = 2
+        xcurr = 15
+        ycurr = 15
+        n = 3
+        sep = 7
+        while ycurr < 490:
+            xcurr = 15
+            while xcurr < 490:
+                ap_mask[xcurr:xcurr + n, ycurr:ycurr+n] = np.ones((n, n))
+                xcurr = xcurr + sep + n
+            ycurr = ycurr + sep + n
+        t_mask = np.array(im.fromarray(ap_mask).rotate(p1))
+        ap_mask = ap_mask*t_mask
 
     return ap_mask,smin,smax,sstep
 
 def plot(type,p1,p2):
+    expo = 1
+    if type == 'lg':
+        expo = 2
     amask,smin,smax,sstep = mask(type,p1,p2)
     zin = zarr*amask
     zout = fftshift(np.fft.fftn(zin))/(N*N)
@@ -155,9 +189,8 @@ def plot(type,p1,p2):
     supress_bg(zout)
     fig = make_subplots(rows=1, cols=2,subplot_titles=('Input', 'Output'))
     fig.add_trace(go.Contour(z=zin.T[int(0.25*N):int(0.75*N),int(0.25*N):int(0.75*N)], x=xarr[int(0.25*N):int(0.75*N)], y=yarr[int(0.25*N):int(0.75*N)], colorscale='Hot',contours_showlines=False), 1, 1)
-    fig.add_trace(go.Contour(z=np.absolute(zout.T)[int(0.15*N):int(0.85*N),int(0.15*N):int(0.85*N)], x=xoutarr[int(0.15*N):int(0.85*N)], y=youtarr[int(0.15*N):int(0.85*N)], colorscale='Hot', contours_showlines=False), 1, 2)
+    fig.add_trace(go.Contour(z=np.absolute(zout.T)[int(0.1*N):int(0.9*N),int(0.1*N):int(0.9*N)]**expo, x=xoutarr[int(0.1*N):int(0.9*N)], y=youtarr[int(0.1*N):int(0.9*N)], colorscale='Hot', contours_showlines=False), 1, 2)
     fig.update_xaxes(title_text="x' (micron)", row=1, col=1)
     fig.update_xaxes(title_text="x (cm)", row=1, col=2)
     fig.update_layout(height=550, width=1100)
     return fig,smin,smax,sstep
-
