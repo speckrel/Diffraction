@@ -104,7 +104,7 @@ def update_plots(a,d,st):
 
     if p1[st] != 'None':
         val1 = str(a)+' microns'
-        if p1[st] == 'lg':
+        if st == 'lg':
             val1 = str(a) + ' degrees'
     if p2[st] != 'None':
         val2 = str(d)+' microns'
